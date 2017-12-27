@@ -19,9 +19,7 @@ router.post('/', function(req, res, next) {
     email: req.body.email.trim(),
     password: req.body.password.trim()
   };
-
-  console.log(body);
-
+  
   UserModel.create(body)
   .then(user => res.json(user))
   .catch(error => res.send(error));
