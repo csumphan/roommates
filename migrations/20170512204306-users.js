@@ -18,6 +18,9 @@ module.exports = {
         email: {
           type: Sequelize.STRING,
         },
+        profilePicture: {
+          type: Sequelize.STRING,
+        },
         password: {
           type: Sequelize.STRING(72),
         },
@@ -28,8 +31,7 @@ module.exports = {
           type: Sequelize.DATE,
         },
       }
-    )
-      .then(() => queryInterface.addIndex(tableName, ['email'], { indexName: 'u_email', indicesType: 'UNIQUE' })),
+    ),
   down: queryInterface =>
     queryInterface.dropTable(tableName, { cascade: true, truncate: true })
 };
