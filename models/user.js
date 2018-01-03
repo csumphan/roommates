@@ -45,6 +45,20 @@ module.exports = (sequelize, Sequelize) => {
     updatedAt: Sequelize.DATE,
   }
 );
+  User.prototype.toJSON = function() {
+    const values = Object.assign({}, this.get());
+    delete values.password;
+    return values;
+  };
+
+  User.prototype.toJWTPayload = function() {
+    const values = Object.assign({}, this.get());
+
+    return {
+      id: values.id,
+      email: values.email
+    };
+  };
 
   return User;
 };
