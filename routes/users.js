@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const bcrypt = require('bcrypt');
 const jwt = require('../libs/jwt');
 const httpStatus = require('http-status-codes');
 const model = require('../models');
@@ -26,7 +27,6 @@ router.post('/login', function(req, res, next) {
   }
   const body = {
     email: req.body.email.trim(),
-    password: req.body.password.trim()
   };
 
   UserModel.findOne({where: body})
@@ -35,14 +35,20 @@ router.post('/login', function(req, res, next) {
       res.status(httpStatus.UNAUTHORIZED).json({error: 'Invalid login credentials'});
       return;
     }
+    console.log(user.password);
+    bcrypt.compare(req.body.password.trim(), user.password, (err, match) => {
+      if (!match) {
+        res.status(httpStatus.UNAUTHORIZED).json({error: 'Invalid login credentials'});
+        return;
+      }
+      const userObj = user.toJSON();
+      const jwtObj = user.toJWTPayload();
+      const token = jwt.createToken(jwtObj);
 
-    const userObj = user.toJSON();
-    const jwtObj = user.toJWTPayload();
-    const token = jwt.createToken(jwtObj);
+      userObj.jwt = token;
 
-    userObj.jwt = token;
-
-    res.status(httpStatus.ACCEPTED).json({data: userObj});
+      res.status(httpStatus.ACCEPTED).json({data: userObj});
+    });
   })
   .catch(error => res.send(error));
 });
@@ -64,25 +70,26 @@ router.post('/', function(req, res, next) {
     res.status(httpStatus.BAD_REQUEST).json({error: 'ERROR MSG IN PROGRESS'});
     return;
   }
+  bcrypt.hash(req.body.password.trim(), 10, (err, hash) => {
+    const body = {
+      firstName: req.body.firstName.trim(),
+      lastName: req.body.lastName.trim(),
+      email: req.body.email.trim(),
+      password: hash
+    };
+    UserModel.create(body)
+    .then(user => {
+      const userObj = user.toJSON();
+      const jwtObj = user.toJWTPayload();
+      const token = jwt.createToken(jwtObj);
 
-  const body = {
-    firstName: req.body.firstName.trim(),
-    lastName: req.body.lastName.trim(),
-    email: req.body.email.trim(),
-    password: req.body.password.trim()
-  };
+      userObj.jwt = token;
 
-  UserModel.create(body)
-  .then(user => {
-    const userObj = user.toJSON();
-    const jwtObj = user.toJWTPayload();
-    const token = jwt.createToken(jwtObj);
+      res.status(httpStatus.CREATED).json({data: userObj});
+    })
+    .catch(error => res.send(error));
 
-    userObj.jwt = token;
-
-    res.status(httpStatus.CREATED).json({data: userObj});
   })
-  .catch(error => res.send(error));
 });
 
 module.exports = router;
